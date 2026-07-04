@@ -41,6 +41,7 @@ void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
 int main(void)
 {
     pod.Init();
+    pod.seed.StartLog(false);  
     pod.SetAudioBlockSize(4);
     float sample_rate = pod.AudioSampleRate();
 
@@ -51,5 +52,15 @@ int main(void)
     pod.StartAdc();
     pod.StartAudio(AudioCallback);
 
-    while(1) {}
+    while(1) {
+        pod.seed.PrintLine("mode:%d fb:%d dw:%d bass:%d treb:%d delrate:%d",
+                            controls.GetMode(),
+                            (int)(controls.GetFeedback() * 100),
+                            (int)(controls.GetDrywet() * 100),
+                            (int)(controls.GetBassGain() * 100),
+                            (int)(controls.GetTrebleGain() * 100),
+                            (int)controls.GetDelayTarget());
+
+        System::Delay(250);  // print ~4x/sec instead of flooding or blocking anything time-critical
+    }
 }

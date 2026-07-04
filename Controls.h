@@ -12,6 +12,7 @@ class Controls
     float GetBassGain()    const { return bassGain_; }
     float GetTrebleGain()  const { return trebleGain_; }
     float GetDelayTarget() const { return delayTarget_; }
+    int   GetMode() const { return mode_; }
 
   private:
     enum { PAGE1 = 0, PAGE2 = 1 };

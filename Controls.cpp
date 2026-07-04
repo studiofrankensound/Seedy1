@@ -11,7 +11,7 @@ void Controls::Init(DaisyPod *pod, float sample_rate, float maxDelaySamples)
     minDelaySamples_ = sample_rate * 0.02f;
 
     feedbackParam_.Init(pod_->knob1, 0.0f, 0.9f, Parameter::CUBE);   // PAGE1 knob1
-    drywetParam_.Init(pod_->knob2, 0.0f, 1.0f, Parameter::LINEAR);   // PAGE1 knob2
+    drywetParam_.Init(pod_->knob2, 0.0f, 0.5f, Parameter::LINEAR);   // PAGE1 knob2
     bassParam_.Init(pod_->knob1, 0.0f, 2.0f, Parameter::LINEAR);     // PAGE2 knob1
     trebleParam_.Init(pod_->knob2, 0.0f, 2.0f, Parameter::LINEAR);   // PAGE2 knob2
 
