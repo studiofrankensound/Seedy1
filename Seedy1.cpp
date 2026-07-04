@@ -23,6 +23,7 @@ void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
     delayEngine.SetDelayTarget(controls.GetDelayTarget());
     toneStack.SetBassGain(controls.GetBassGain());
     toneStack.SetTrebleGain(controls.GetTrebleGain());
+    delayEngine.SetDamping(controls.GetDampingAmount());
 
     for(size_t i = 0; i < size; i += 2)
     {
@@ -53,13 +54,14 @@ int main(void)
     pod.StartAudio(AudioCallback);
 
     while(1) {
-        pod.seed.PrintLine("mode:%d fb:%d dw:%d bass:%d treb:%d delrate:%d",
+        pod.seed.PrintLine("mode:%d fb:%d dw:%d bass:%d treb:%d delrate:%d damp:%d",
                             controls.GetMode(),
                             (int)(controls.GetFeedback() * 100),
                             (int)(controls.GetDrywet() * 100),
                             (int)(controls.GetBassGain() * 100),
                             (int)(controls.GetTrebleGain() * 100),
-                            (int)controls.GetDelayTarget());
+                            (int)controls.GetDelayTarget(),
+                            (int)(controls.GetDampingAmount() * 100));
 
         System::Delay(250);  // print ~4x/sec instead of flooding or blocking anything time-critical
     }

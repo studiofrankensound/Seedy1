@@ -14,6 +14,9 @@ float ToneStack::OnePoleLowpass(float in, float &state, float coeff)
 
 void ToneStack::Process(float inl, float inr, float &outl, float &outr)
 {
+    daisysp::fonepole(currentBassGain_, bassGain_, .001f);
+    daisysp::fonepole(currentTrebleGain_, trebleGain_, .001f);
+
     float bassL = OnePoleLowpass(inl, bassStateL_, bassCoeff_);
     float bassR = OnePoleLowpass(inr, bassStateR_, bassCoeff_);
     float trebleL = inl - bassL;

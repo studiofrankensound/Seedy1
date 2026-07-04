@@ -9,6 +9,8 @@ class ToneStack
     void SetBassGain(float g)   { bassGain_ = g; }
     void SetTrebleGain(float g) { trebleGain_ = g; }
 
+    float currentBassGain_ = 1.0f, currentTrebleGain_ = 1.0f;
+
   private:
     static float OnePoleLowpass(float in, float &state, float coeff);
 

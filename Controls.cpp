@@ -12,8 +12,8 @@ void Controls::Init(DaisyPod *pod, float sample_rate, float maxDelaySamples)
 
     feedbackParam_.Init(pod_->knob1, 0.0f, 0.9f, Parameter::CUBE);   // PAGE1 knob1
     drywetParam_.Init(pod_->knob2, 0.0f, 0.5f, Parameter::LINEAR);   // PAGE1 knob2
-    bassParam_.Init(pod_->knob1, 0.0f, 2.0f, Parameter::LINEAR);     // PAGE2 knob1
-    trebleParam_.Init(pod_->knob2, 0.0f, 2.0f, Parameter::LINEAR);   // PAGE2 knob2
+    toneParam_.Init(pod_->knob1, 0.0f, 2.0f, Parameter::LINEAR);     // PAGE2 knob1
+    dampingParam_.Init(pod_->knob2, 0.0f, 1.0f, Parameter::LINEAR);  // PAGE2 knob2
 
     delayTarget_ = (sample_rate * 0.75f < maxDelaySamples_) ? sample_rate * 0.75f : maxDelaySamples_;
 }
@@ -46,8 +46,18 @@ void Controls::UpdateKnobs()
             if(knob2Armed_[mode_]) { drywet_   = drywetParam_.Process();   knob2LastRaw_[mode_] = k2_; }
             break;
         case PAGE2:
-            if(knob1Armed_[mode_]) { bassGain_   = bassParam_.Process();   knob1LastRaw_[mode_] = k1_; }
-            if(knob2Armed_[mode_]) { trebleGain_ = trebleParam_.Process(); knob2LastRaw_[mode_] = k2_; }
+            if(knob1Armed_[mode_])
+            {
+                float tone = toneParam_.Process();
+                bassGain_   = 1.5f - tone;
+                trebleGain_ = 0.5f + tone;
+                knob1LastRaw_[mode_] = k1_;
+            }
+            if(knob2Armed_[mode_])
+            {
+                dampingAmount_ = dampingParam_.Process();
+                knob2LastRaw_[mode_] = k2_;
+            }
             break;
     }
 }
