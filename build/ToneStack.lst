@@ -1,0 +1,335 @@
+ARM GAS  C:\Users\lockj\AppData\Local\Temp\ccZwKV40.s 			page 1
+
+
+   1              		.cpu cortex-m7
+   2              		.eabi_attribute 28, 1
+   3              		.eabi_attribute 20, 1
+   4              		.eabi_attribute 21, 1
+   5              		.eabi_attribute 23, 3
+   6              		.eabi_attribute 24, 1
+   7              		.eabi_attribute 25, 1
+   8              		.eabi_attribute 26, 1
+   9              		.eabi_attribute 30, 2
+  10              		.eabi_attribute 34, 1
+  11              		.eabi_attribute 18, 4
+  12              		.file	"ToneStack.cpp"
+  13              		.text
+  14              	.Ltext0:
+  15              		.cfi_sections	.debug_frame
+  16              		.section	.text._ZN9ToneStack4InitEff,"ax",%progbits
+  17              		.align	1
+  18              		.p2align 2,,3
+  19              		.global	_ZN9ToneStack4InitEff
+  20              		.arch armv7e-m
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  24              		.fpu fpv5-d16
+  26              	_ZN9ToneStack4InitEff:
+  27              	.LVL0:
+  28              	.LFB3511:
+  29              		.file 1 "ToneStack.cpp"
+   1:ToneStack.cpp **** #include "ToneStack.h"
+   2:ToneStack.cpp **** #include "daisysp.h"
+   3:ToneStack.cpp **** 
+   4:ToneStack.cpp **** void ToneStack::Init(float sample_rate, float crossoverHz)
+   5:ToneStack.cpp **** {
+  30              		.loc 1 5 1 view -0
+  31              		.cfi_startproc
+  32              		@ args = 0, pretend = 0, frame = 0
+  33              		@ frame_needed = 0, uses_anonymous_args = 0
+   6:ToneStack.cpp ****     bassCoeff_ = 1.0f - expf(-2.0f * PI_F * crossoverHz / sample_rate);
+  34              		.loc 1 6 5 view .LVU1
+  35              		.loc 1 6 43 is_stmt 0 view .LVU2
+  36 0000 DFED087A 		vldr.32	s15, .L4
+  37 0004 60EEA70A 		vmul.f32	s1, s1, s15
+  38              	.LVL1:
+   5:ToneStack.cpp ****     bassCoeff_ = 1.0f - expf(-2.0f * PI_F * crossoverHz / sample_rate);
+  39              		.loc 1 5 1 view .LVU3
+  40 0008 10B5     		push	{r4, lr}
+  41              		.cfi_def_cfa_offset 8
+  42              		.cfi_offset 4, -8
+  43              		.cfi_offset 14, -4
+  44              		.loc 1 6 29 view .LVU4
+  45 000a 80EE800A 		vdiv.f32	s0, s1, s0
+  46              	.LVL2:
+   5:ToneStack.cpp ****     bassCoeff_ = 1.0f - expf(-2.0f * PI_F * crossoverHz / sample_rate);
+  47              		.loc 1 5 1 view .LVU5
+  48 000e 0446     		mov	r4, r0
+  49              		.loc 1 6 29 view .LVU6
+  50 0010 FFF7FEFF 		bl	expf
+ARM GAS  C:\Users\lockj\AppData\Local\Temp\ccZwKV40.s 			page 2
+
+
+  51              	.LVL3:
+  52              		.loc 1 6 23 view .LVU7
+  53 0014 F7EE007A 		vmov.f32	s15, #1.0e+0
+  54 0018 37EEC00A 		vsub.f32	s0, s15, s0
+  55              		.loc 1 6 16 view .LVU8
+  56 001c 84ED020A 		vstr.32	s0, [r4, #8]
+   7:ToneStack.cpp **** }
+  57              		.loc 1 7 1 view .LVU9
+  58 0020 10BD     		pop	{r4, pc}
+  59              	.LVL4:
+  60              	.L5:
+  61              		.loc 1 7 1 view .LVU10
+  62 0022 00BF     		.align	2
+  63              	.L4:
+  64 0024 DB0FC9C0 		.word	-1060565029
+  65              		.cfi_endproc
+  66              	.LFE3511:
+  68              		.section	.text._ZN9ToneStack14OnePoleLowpassEfRff,"ax",%progbits
+  69              		.align	1
+  70              		.p2align 2,,3
+  71              		.global	_ZN9ToneStack14OnePoleLowpassEfRff
+  72              		.syntax unified
+  73              		.thumb
+  74              		.thumb_func
+  75              		.fpu fpv5-d16
+  77              	_ZN9ToneStack14OnePoleLowpassEfRff:
+  78              	.LVL5:
+  79              	.LFB3512:
+   8:ToneStack.cpp **** 
+   9:ToneStack.cpp **** float ToneStack::OnePoleLowpass(float in, float &state, float coeff)
+  10:ToneStack.cpp **** {
+  80              		.loc 1 10 1 is_stmt 1 view -0
+  81              		.cfi_startproc
+  82              		@ args = 0, pretend = 0, frame = 0
+  83              		@ frame_needed = 0, uses_anonymous_args = 0
+  84              		@ link register save eliminated.
+  11:ToneStack.cpp ****     state += coeff * (in - state);
+  85              		.loc 1 11 5 view .LVU12
+  86              		.loc 1 11 11 is_stmt 0 view .LVU13
+  87 0000 D0ED007A 		vldr.32	s15, [r0]
+  88              		.loc 1 11 26 view .LVU14
+  89 0004 30EE677A 		vsub.f32	s14, s0, s15
+  90              		.loc 1 11 11 view .LVU15
+  91 0008 E7EE207A 		vfma.f32	s15, s14, s1
+  92 000c B0EE670A 		vmov.f32	s0, s15
+  93              	.LVL6:
+  94              		.loc 1 11 11 view .LVU16
+  95 0010 C0ED007A 		vstr.32	s15, [r0]
+  12:ToneStack.cpp ****     return state;
+  96              		.loc 1 12 5 is_stmt 1 view .LVU17
+  13:ToneStack.cpp **** }
+  97              		.loc 1 13 1 is_stmt 0 view .LVU18
+  98 0014 7047     		bx	lr
+  99              		.cfi_endproc
+ 100              	.LFE3512:
+ 102 0016 00BF     		.section	.text._ZN9ToneStack7ProcessEffRfS0_,"ax",%progbits
+ 103              		.align	1
+ARM GAS  C:\Users\lockj\AppData\Local\Temp\ccZwKV40.s 			page 3
+
+
+ 104              		.p2align 2,,3
+ 105              		.global	_ZN9ToneStack7ProcessEffRfS0_
+ 106              		.syntax unified
+ 107              		.thumb
+ 108              		.thumb_func
+ 109              		.fpu fpv5-d16
+ 111              	_ZN9ToneStack7ProcessEffRfS0_:
+ 112              	.LVL7:
+ 113              	.LFB3513:
+  14:ToneStack.cpp **** 
+  15:ToneStack.cpp **** void ToneStack::Process(float inl, float inr, float &outl, float &outr)
+  16:ToneStack.cpp **** {
+ 114              		.loc 1 16 1 is_stmt 1 view -0
+ 115              		.cfi_startproc
+ 116              		@ args = 0, pretend = 0, frame = 0
+ 117              		@ frame_needed = 0, uses_anonymous_args = 0
+ 118              		@ link register save eliminated.
+  17:ToneStack.cpp ****     float bassL = OnePoleLowpass(inl, bassStateL_, bassCoeff_);
+ 119              		.loc 1 17 5 view .LVU20
+ 120              	.LBB6:
+ 121              	.LBB7:
+  11:ToneStack.cpp ****     return state;
+ 122              		.loc 1 11 11 is_stmt 0 view .LVU21
+ 123 0000 90ED007A 		vldr.32	s14, [r0]
+ 124              	.LBE7:
+ 125              	.LBE6:
+ 126              		.loc 1 17 33 view .LVU22
+ 127 0004 D0ED026A 		vldr.32	s13, [r0, #8]
+ 128              	.LVL8:
+ 129              	.LBB11:
+ 130              	.LBI6:
+   9:ToneStack.cpp **** {
+ 131              		.loc 1 9 7 is_stmt 1 view .LVU23
+ 132              	.LBB8:
+  11:ToneStack.cpp ****     return state;
+ 133              		.loc 1 11 5 view .LVU24
+  11:ToneStack.cpp ****     return state;
+ 134              		.loc 1 11 26 is_stmt 0 view .LVU25
+ 135 0008 70EE474A 		vsub.f32	s9, s0, s14
+ 136              	.LBE8:
+ 137              	.LBE11:
+ 138              	.LBB12:
+ 139              	.LBB13:
+  11:ToneStack.cpp ****     return state;
+ 140              		.loc 1 11 11 view .LVU26
+ 141 000c D0ED017A 		vldr.32	s15, [r0, #4]
+ 142              	.LBE13:
+ 143              	.LBE12:
+  18:ToneStack.cpp ****     float bassR = OnePoleLowpass(inr, bassStateR_, bassCoeff_);
+  19:ToneStack.cpp ****     float trebleL = inl - bassL;
+  20:ToneStack.cpp ****     float trebleR = inr - bassR;
+  21:ToneStack.cpp **** 
+  22:ToneStack.cpp ****     outl = (bassGain_ * bassL) + (trebleGain_ * trebleL);
+ 144              		.loc 1 22 47 view .LVU27
+ 145 0010 D0ED045A 		vldr.32	s11, [r0, #16]
+ 146              	.LBB18:
+ 147              	.LBB14:
+ARM GAS  C:\Users\lockj\AppData\Local\Temp\ccZwKV40.s 			page 4
+
+
+  11:ToneStack.cpp ****     return state;
+ 148              		.loc 1 11 26 view .LVU28
+ 149 0014 30EEE75A 		vsub.f32	s10, s1, s15
+ 150              	.LBE14:
+ 151              	.LBE18:
+ 152              		.loc 1 22 32 view .LVU29
+ 153 0018 90ED036A 		vldr.32	s12, [r0, #12]
+ 154              	.LBB19:
+ 155              	.LBB9:
+  11:ToneStack.cpp ****     return state;
+ 156              		.loc 1 11 11 view .LVU30
+ 157 001c A6EEA47A 		vfma.f32	s14, s13, s9
+ 158              	.LBE9:
+ 159              	.LBE19:
+ 160              	.LBB20:
+ 161              	.LBB15:
+ 162 0020 E6EE857A 		vfma.f32	s15, s13, s10
+ 163              	.LBE15:
+ 164              	.LBE20:
+  19:ToneStack.cpp ****     float trebleR = inr - bassR;
+ 165              		.loc 1 19 11 view .LVU31
+ 166 0024 30EE470A 		vsub.f32	s0, s0, s14
+ 167              	.LVL9:
+ 168              	.LBB21:
+ 169              	.LBB10:
+  11:ToneStack.cpp ****     return state;
+ 170              		.loc 1 11 11 view .LVU32
+ 171 0028 80ED007A 		vstr.32	s14, [r0]
+  12:ToneStack.cpp **** }
+ 172              		.loc 1 12 5 is_stmt 1 view .LVU33
+ 173              	.LVL10:
+  12:ToneStack.cpp **** }
+ 174              		.loc 1 12 5 is_stmt 0 view .LVU34
+ 175              	.LBE10:
+ 176              	.LBE21:
+  18:ToneStack.cpp ****     float trebleL = inl - bassL;
+ 177              		.loc 1 18 5 is_stmt 1 view .LVU35
+ 178              	.LBB22:
+ 179              	.LBI12:
+   9:ToneStack.cpp **** {
+ 180              		.loc 1 9 7 view .LVU36
+ 181              	.LBB16:
+  11:ToneStack.cpp ****     return state;
+ 182              		.loc 1 11 5 view .LVU37
+ 183              	.LBE16:
+ 184              	.LBE22:
+  20:ToneStack.cpp **** 
+ 185              		.loc 1 20 11 is_stmt 0 view .LVU38
+ 186 002c 70EEE70A 		vsub.f32	s1, s1, s15
+ 187              	.LVL11:
+ 188              	.LBB23:
+ 189              	.LBB17:
+  11:ToneStack.cpp ****     return state;
+ 190              		.loc 1 11 11 view .LVU39
+ 191 0030 C0ED017A 		vstr.32	s15, [r0, #4]
+  12:ToneStack.cpp **** }
+ 192              		.loc 1 12 5 is_stmt 1 view .LVU40
+ARM GAS  C:\Users\lockj\AppData\Local\Temp\ccZwKV40.s 			page 5
+
+
+ 193              	.LVL12:
+  12:ToneStack.cpp **** }
+ 194              		.loc 1 12 5 is_stmt 0 view .LVU41
+ 195              	.LBE17:
+ 196              	.LBE23:
+  19:ToneStack.cpp ****     float trebleR = inr - bassR;
+ 197              		.loc 1 19 5 is_stmt 1 view .LVU42
+  20:ToneStack.cpp **** 
+ 198              		.loc 1 20 5 view .LVU43
+ 199              		.loc 1 22 5 view .LVU44
+ 200              		.loc 1 22 47 is_stmt 0 view .LVU45
+ 201 0034 20EE250A 		vmul.f32	s0, s0, s11
+ 202              		.loc 1 22 32 view .LVU46
+ 203 0038 A6EE070A 		vfma.f32	s0, s12, s14
+ 204              		.loc 1 22 10 view .LVU47
+ 205 003c 81ED000A 		vstr.32	s0, [r1]
+  23:ToneStack.cpp ****     outr = (bassGain_ * bassR) + (trebleGain_ * trebleR);
+ 206              		.loc 1 23 5 is_stmt 1 view .LVU48
+ 207              		.loc 1 23 47 is_stmt 0 view .LVU49
+ 208 0040 D0ED046A 		vldr.32	s13, [r0, #16]
+ 209              		.loc 1 23 32 view .LVU50
+ 210 0044 90ED037A 		vldr.32	s14, [r0, #12]
+ 211              	.LVL13:
+ 212              		.loc 1 23 47 view .LVU51
+ 213 0048 60EEA60A 		vmul.f32	s1, s1, s13
+ 214              	.LVL14:
+ 215              		.loc 1 23 32 view .LVU52
+ 216 004c E7EE270A 		vfma.f32	s1, s14, s15
+ 217              		.loc 1 23 10 view .LVU53
+ 218 0050 C2ED000A 		vstr.32	s1, [r2]
+  24:ToneStack.cpp **** }...
+ 219              		.loc 1 24 1 view .LVU54
+ 220 0054 7047     		bx	lr
+ 221              		.cfi_endproc
+ 222              	.LFE3513:
+ 224 0056 00BF     		.text
+ 225              	.Letext0:
+ 226              		.file 2 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\machine\\_default_types.h"
+ 227              		.file 3 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\sys\\_stdint.h"
+ 228              		.file 4 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\stdint.h"
+ 229              		.file 5 "c:\\program files\\daisytoolchain\\lib\\gcc\\arm-none-eabi\\10.2.1\\include\\stddef.h"
+ 230              		.file 6 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\cmath"
+ 231              		.file 7 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\bits\\std_abs.h"
+ 232              		.file 8 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\cstdint"
+ 233              		.file 9 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\cstdlib"
+ 234              		.file 10 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\type_traits"
+ 235              		.file 11 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\debug\\debug.h"
+ 236              		.file 12 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\cwchar"
+ 237              		.file 13 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\bits\\stl_pair.h
+ 238              		.file 14 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\bits\\exception_
+ 239              		.file 15 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\arm-none-eabi\\t
+ 240              		.file 16 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\clocale"
+ 241              		.file 17 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\cstdio"
+ 242              		.file 18 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\bits\\basic_stri
+ 243              		.file 19 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\bits\\charconv.h
+ 244              		.file 20 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\bits\\algorithmf
+ 245              		.file 21 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\cstring"
+ARM GAS  C:\Users\lockj\AppData\Local\Temp\ccZwKV40.s 			page 6
+
+
+ 246              		.file 22 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\bits\\predefined
+ 247              		.file 23 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\sys\\_types.h"
+ 248              		.file 24 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\sys\\reent.h"
+ 249              		.file 25 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\sys\\lock.h"
+ 250              		.file 26 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\math.h"
+ 251              		.file 27 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\stdlib.h"
+ 252              		.file 28 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\math.h"
+ 253              		.file 29 "ToneStack.h"
+ 254              		.file 30 "D:/OneDrive/Frankencloud/Installable/AudioInterfaces/DaisySeed/DaisyExamples/DaisySP/Sou
+ 255              		.file 31 "D:/OneDrive/Frankencloud/Installable/AudioInterfaces/DaisySeed/DaisyExamples/DaisySP/Sou
+ 256              		.file 32 "c:\\program files\\daisytoolchain\\lib\\gcc\\arm-none-eabi\\10.2.1\\include\\stdarg.h"
+ 257              		.file 33 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\wchar.h"
+ 258              		.file 34 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\locale.h"
+ 259              		.file 35 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\stdio.h"
+ 260              		.file 36 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\c++\\10.2.1\\stdlib.h"
+ 261              		.file 37 "c:\\program files\\daisytoolchain\\arm-none-eabi\\include\\string.h"
+ 262              		.file 38 "<built-in>"
+ARM GAS  C:\Users\lockj\AppData\Local\Temp\ccZwKV40.s 			page 7
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 ToneStack.cpp
+C:\Users\lockj\AppData\Local\Temp\ccZwKV40.s:17     .text._ZN9ToneStack4InitEff:00000000 $t
+C:\Users\lockj\AppData\Local\Temp\ccZwKV40.s:26     .text._ZN9ToneStack4InitEff:00000000 _ZN9ToneStack4InitEff
+C:\Users\lockj\AppData\Local\Temp\ccZwKV40.s:64     .text._ZN9ToneStack4InitEff:00000024 $d
+C:\Users\lockj\AppData\Local\Temp\ccZwKV40.s:69     .text._ZN9ToneStack14OnePoleLowpassEfRff:00000000 $t
+C:\Users\lockj\AppData\Local\Temp\ccZwKV40.s:77     .text._ZN9ToneStack14OnePoleLowpassEfRff:00000000 _ZN9ToneStack14OnePoleLowpassEfRff
+C:\Users\lockj\AppData\Local\Temp\ccZwKV40.s:103    .text._ZN9ToneStack7ProcessEffRfS0_:00000000 $t
+C:\Users\lockj\AppData\Local\Temp\ccZwKV40.s:111    .text._ZN9ToneStack7ProcessEffRfS0_:00000000 _ZN9ToneStack7ProcessEffRfS0_
+
+UNDEFINED SYMBOLS
+expf
