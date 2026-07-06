@@ -26,6 +26,15 @@ static FilterEngine filterEngine;
 static SimpleChorusEngine chorusEngine;
 static ReverbEngine DSY_SDRAM_BSS reverbEngine;
 
+static volatile float peakCompL = 0, peakCompR = 0;
+static volatile float peakEqL = 0, peakEqR = 0;
+static volatile float peakPitchL = 0, peakPitchR = 0;
+static volatile float peakLfoL = 0, peakLfoR = 0;
+static volatile float peakFiltL = 0, peakFiltR = 0;
+static volatile float peakChorusL = 0, peakChorusR = 0;
+static volatile float peakDlyL = 0, peakDlyR = 0;
+static volatile float peakRevL = 0, peakRevR = 0;
+
 void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
                     AudioHandle::InterleavingOutputBuffer out,
                     size_t                                size)
@@ -78,27 +87,43 @@ void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
             comp.UpdateEnvelope(peak);
             float compedL = comp.Apply(inl);
             float compedR = comp.Apply(inr);
+            if(fabsf(compedL) > peakCompL) peakCompL = fabsf(compedL);
+            if(fabsf(compedR) > peakCompR) peakCompR = fabsf(compedR);
 
             float eqL, eqR;
             toneStack.Process(compedL, compedR, eqL, eqR);
+            if(fabsf(eqL) > peakEqL) peakEqL = fabsf(eqL);
+            if(fabsf(eqR) > peakEqR) peakEqR = fabsf(eqR);
 
             float pitchL, pitchR;
             pitchShiftEngine.Process(eqL, eqR, pitchL, pitchR);
+            if(fabsf(pitchL) > peakPitchL) peakPitchL = fabsf(pitchL);
+            if(fabsf(pitchR) > peakPitchR) peakPitchR = fabsf(pitchR);
 
             float lfoL, lfoR;
             lfoEngine.Process(pitchL, pitchR, lfoL, lfoR);
+            if(fabsf(lfoL) > peakLfoL) peakLfoL = fabsf(lfoL);
+            if(fabsf(lfoR) > peakLfoR) peakLfoR = fabsf(lfoR);
 
             float filtL, filtR;
             filterEngine.Process(lfoL, lfoR, filtL, filtR);
+            if(fabsf(filtL) > peakFiltL) peakFiltL = fabsf(filtL);
+            if(fabsf(filtR) > peakFiltR) peakFiltR = fabsf(filtR);
 
             float chorusL, chorusR;
             chorusEngine.Process(filtL, filtR, chorusL, chorusR);
+            if(fabsf(chorusL) > peakChorusL) peakChorusL = fabsf(chorusL);
+            if(fabsf(chorusR) > peakChorusR) peakChorusR = fabsf(chorusR);
 
             float dlyL, dlyR;
             delayEngine.Process(chorusL, chorusR, dlyL, dlyR);
+            if(fabsf(dlyL) > peakDlyL) peakDlyL = fabsf(dlyL);
+            if(fabsf(dlyR) > peakDlyR) peakDlyR = fabsf(dlyR);
 
             float revL, revR;
             reverbEngine.Process(dlyL, dlyR, revL, revR);
+            if(fabsf(revL) > peakRevL) peakRevL = fabsf(revL);
+            if(fabsf(revR) > peakRevR) peakRevR = fabsf(revR);
 
             out[i]     = revL;
             out[i + 1] = revR;
@@ -110,7 +135,7 @@ int main(void)
 {
     pod.Init();
     pod.seed.StartLog(false);
-    pod.SetAudioBlockSize(4);
+    pod.SetAudioBlockSize(48);
     float sample_rate = pod.AudioSampleRate();
 
     tempo.Init(sample_rate);
@@ -174,6 +199,15 @@ int main(void)
         System::Delay(5);
 
         pod.seed.PrintLine(" ");   // blank line between updates for visual separation
+
+        peakCompL = peakCompR = 0;
+        peakEqL = peakEqR = 0;
+        peakPitchL = peakPitchR = 0;
+        peakLfoL = peakLfoR = 0;
+        peakFiltL = peakFiltR = 0;
+        peakChorusL = peakChorusR = 0;
+        peakDlyL = peakDlyR = 0;
+        peakRevL = peakRevR = 0;
 
         System::Delay(1000);
     }
