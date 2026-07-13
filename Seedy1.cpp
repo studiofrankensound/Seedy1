@@ -10,6 +10,8 @@
 #include "ReverbEngine.h"
 #include "FilterEngine.h"
 #include "SimpleChorusEngine.h"
+#include "OverdriveEngine.h"
+#include "DisplayEngine.h"
 
 using namespace daisysp;
 using namespace daisy;
@@ -20,20 +22,13 @@ static PitchShiftEngine pitchShiftEngine;   // regular RAM -- guarantees zero-in
 static ToneStack toneStack;
 static Controls controls;
 static Tempo tempo;
+static OverdriveEngine overdriveEngine;
 static SimpleCompressor comp;
 static LfoEngine lfoEngine;
 static FilterEngine filterEngine;
 static SimpleChorusEngine chorusEngine;
 static ReverbEngine DSY_SDRAM_BSS reverbEngine;
-
-static volatile float peakCompL = 0, peakCompR = 0;
-static volatile float peakEqL = 0, peakEqR = 0;
-static volatile float peakPitchL = 0, peakPitchR = 0;
-static volatile float peakLfoL = 0, peakLfoR = 0;
-static volatile float peakFiltL = 0, peakFiltR = 0;
-static volatile float peakChorusL = 0, peakChorusR = 0;
-static volatile float peakDlyL = 0, peakDlyR = 0;
-static volatile float peakRevL = 0, peakRevR = 0;
+static DisplayEngine displayEngine;
 
 void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
                     AudioHandle::InterleavingOutputBuffer out,
@@ -41,6 +36,9 @@ void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
 {
     controls.Process();
     tempo.Advance(size);
+
+    overdriveEngine.SetDrive(controls.GetOverdriveDrive());
+    overdriveEngine.SetLevel(controls.GetOverdriveLevel());
 
     comp.SetThresholdDb(controls.GetCompThreshold());
     comp.SetRatio(controls.GetCompRatio());
@@ -83,47 +81,34 @@ void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
         }
         else
         {
-            float peak = fmaxf(fabsf(inl), fabsf(inr));
+            float odL, odR;
+            overdriveEngine.Process(inl, inr, odL, odR);
+
+            float peak = fmaxf(fabsf(odL), fabsf(odR));
             comp.UpdateEnvelope(peak);
-            float compedL = comp.Apply(inl);
-            float compedR = comp.Apply(inr);
-            if(fabsf(compedL) > peakCompL) peakCompL = fabsf(compedL);
-            if(fabsf(compedR) > peakCompR) peakCompR = fabsf(compedR);
+            float compedL = comp.Apply(odL);
+            float compedR = comp.Apply(odR);
 
             float eqL, eqR;
             toneStack.Process(compedL, compedR, eqL, eqR);
-            if(fabsf(eqL) > peakEqL) peakEqL = fabsf(eqL);
-            if(fabsf(eqR) > peakEqR) peakEqR = fabsf(eqR);
 
             float pitchL, pitchR;
             pitchShiftEngine.Process(eqL, eqR, pitchL, pitchR);
-            if(fabsf(pitchL) > peakPitchL) peakPitchL = fabsf(pitchL);
-            if(fabsf(pitchR) > peakPitchR) peakPitchR = fabsf(pitchR);
 
             float lfoL, lfoR;
             lfoEngine.Process(pitchL, pitchR, lfoL, lfoR);
-            if(fabsf(lfoL) > peakLfoL) peakLfoL = fabsf(lfoL);
-            if(fabsf(lfoR) > peakLfoR) peakLfoR = fabsf(lfoR);
 
             float filtL, filtR;
             filterEngine.Process(lfoL, lfoR, filtL, filtR);
-            if(fabsf(filtL) > peakFiltL) peakFiltL = fabsf(filtL);
-            if(fabsf(filtR) > peakFiltR) peakFiltR = fabsf(filtR);
 
             float chorusL, chorusR;
             chorusEngine.Process(filtL, filtR, chorusL, chorusR);
-            if(fabsf(chorusL) > peakChorusL) peakChorusL = fabsf(chorusL);
-            if(fabsf(chorusR) > peakChorusR) peakChorusR = fabsf(chorusR);
 
             float dlyL, dlyR;
             delayEngine.Process(chorusL, chorusR, dlyL, dlyR);
-            if(fabsf(dlyL) > peakDlyL) peakDlyL = fabsf(dlyL);
-            if(fabsf(dlyR) > peakDlyR) peakDlyR = fabsf(dlyR);
 
             float revL, revR;
             reverbEngine.Process(dlyL, dlyR, revL, revR);
-            if(fabsf(revL) > peakRevL) peakRevL = fabsf(revL);
-            if(fabsf(revR) > peakRevR) peakRevR = fabsf(revR);
 
             out[i]     = revL;
             out[i + 1] = revR;
@@ -134,11 +119,11 @@ void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
 int main(void)
 {
     pod.Init();
-    pod.seed.StartLog(false);
     pod.SetAudioBlockSize(48);
     float sample_rate = pod.AudioSampleRate();
 
     tempo.Init(sample_rate);
+    overdriveEngine.Init(sample_rate);
     delayEngine.Init(sample_rate);
     toneStack.Init(sample_rate, 600.0f);
     comp.Init(sample_rate);
@@ -147,6 +132,7 @@ int main(void)
     filterEngine.Init(sample_rate, &tempo);
     chorusEngine.Init(sample_rate);
     reverbEngine.Init(sample_rate);
+    displayEngine.Init();
     controls.Init(&pod, sample_rate, (float)DelayEngine::kMaxDelaySamples, &tempo);
 
     pod.StartAdc();
@@ -154,61 +140,7 @@ int main(void)
 
     while(1)
     {
-        pod.seed.PrintLine("mode:%s bypass:%s bpm:%d",
-                            controls.GetModeName(),
-                            controls.GetBypassed() ? "On" : "Off",
-                            (int)tempo.GetBpm());
-        System::Delay(5);
-
-        pod.seed.PrintLine("  comp-thresh:%d comp-ratio:%d  eq-bass:%d eq-treble:%d",
-                            (int)controls.GetCompThreshold(),
-                            (int)(controls.GetCompRatio() * 10),
-                            (int)(controls.GetBassGain() * 100),
-                            (int)(controls.GetTrebleGain() * 100));
-        System::Delay(5);
-
-        pod.seed.PrintLine("  pitch-wd:%d pitch-pitch:%d  lfo-depth:%d lfo-rate:%d",
-                            (int)(controls.GetPitchMix() * 100),
-                            (int)controls.GetPitchSemitones(),
-                            (int)(controls.GetLfoDepth() * 100),
-                            controls.GetLfoDivisionIndex());
-        System::Delay(5);
-
-        pod.seed.PrintLine("  filt-depth:%d filt-rate:%d",
-                            (int)(controls.GetFilterDepth() * 100),
-                            controls.GetFilterDivisionIndex());
-        System::Delay(5);
-
-        pod.seed.PrintLine("  chorus-depth:%d chorus-rate:%d",
-                            (int)(controls.GetChorusDepth() * 100),
-                            (int)(controls.GetChorusRate() * 100));
-        System::Delay(5);
-
-        pod.seed.PrintLine("  del-wd:%d del-fb:%d del-damp:%d del-x:%d",
-                            (int)(controls.GetDrywet() * 100),
-                            (int)(controls.GetFeedback() * 100),
-                            (int)(controls.GetDampingAmount() * 100),
-                            (int)(controls.GetSpread() * 100));
-        System::Delay(5);
-
-        pod.seed.PrintLine("  verb-wd:%d verb-time:%d verb-tone:%d verb-pd:%d",
-                            (int)(controls.GetReverbMix() * 100),
-                            (int)(controls.GetReverbFeedback() * 100),
-                            (int)controls.GetReverbDamping(),
-                            (int)controls.GetReverbPreDelay());
-        System::Delay(5);
-
-        pod.seed.PrintLine(" ");   // blank line between updates for visual separation
-
-        peakCompL = peakCompR = 0;
-        peakEqL = peakEqR = 0;
-        peakPitchL = peakPitchR = 0;
-        peakLfoL = peakLfoR = 0;
-        peakFiltL = peakFiltR = 0;
-        peakChorusL = peakChorusR = 0;
-        peakDlyL = peakDlyR = 0;
-        peakRevL = peakRevR = 0;
-
-        System::Delay(1000);
+        displayEngine.Update(controls, tempo);
+        System::Delay(100);
     }
 }

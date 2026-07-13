@@ -32,7 +32,7 @@ void SimpleChorusEngine::SetRate(float rateHz)
 void SimpleChorusEngine::Process(float inl, float inr, float &outl, float &outr)
 {
     float baseDelay = sampleRate_ * 0.015f;          // 15ms center
-    float modRange  = depth_ * sampleRate_ * 0.008f; // up to +/-8ms swing at full depth
+    float modRange  = depth_ * sampleRate_ * 0.0025f; // up to +/-2.5ms swing at full depth
 
     float delayTimeL = baseDelay + lfoL_.Process() * modRange;
     float delayTimeR = baseDelay + lfoR_.Process() * modRange;

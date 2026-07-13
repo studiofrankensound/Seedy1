@@ -15,8 +15,11 @@ void DelayEngine::SetDamping(float amount)
     float bassDepth   = 0.7f;
     float trebleDepth = 0.5f;
 
-    dampBassGain_   = 1.0f - bassDepth * tilt;
-    dampTrebleGain_ = 1.0f + trebleDepth * tilt;
+    // Cut-only: neither gain may exceed 1.0, otherwise this filter adds gain
+    // into the feedback loop and repeats in that band sustain longer than
+    // the feedback knob implies (or never fully decay) at extreme settings.
+    dampBassGain_   = (tilt > 0.0f) ? (1.0f - bassDepth * tilt)   : 1.0f;
+    dampTrebleGain_ = (tilt < 0.0f) ? (1.0f + trebleDepth * tilt) : 1.0f;
 }
 
 void DelayEngine::Init(float sample_rate)

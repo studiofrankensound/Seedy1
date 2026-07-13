@@ -11,35 +11,65 @@ void Controls::Init(DaisyPod *pod, float sample_rate, float maxDelaySamples, Tem
     maxDelaySamples_ = maxDelaySamples;
     minDelaySamples_ = sample_rate * 0.02f;
 
-    compThresholdParam_.Init(pod_->knob1, 0.0f, -40.0f, Parameter::LINEAR);   // PAGE_COMP knob1 -- threshold
-    compRatioParam_.Init(pod_->knob2, 1.0f, 8.0f, Parameter::LINEAR);         // PAGE_COMP knob2 -- ratio
+    overdriveDriveMin_ = 0.0f;    overdriveDriveMax_ = 1.0f;
+    overdriveDriveParam_.Init(pod_->knob1, overdriveDriveMin_, overdriveDriveMax_, Parameter::LINEAR);   // PAGE_OVERDRIVE knob1 -- drive
+    overdriveLevelMin_ = 0.1f;    overdriveLevelMax_ = 0.7f;
+    overdriveLevelParam_.Init(pod_->knob2, overdriveLevelMin_, overdriveLevelMax_, Parameter::LINEAR);   // PAGE_OVERDRIVE knob2 -- level
 
-    eqBassParam_.Init(pod_->knob1, 0.5f, 1.5f, Parameter::LINEAR);            // PAGE_EQ knob1 -- bass
-    eqTrebleParam_.Init(pod_->knob2, 0.5f, 2.5f, Parameter::LINEAR);          // PAGE_EQ knob2 -- treble
+    compThresholdMin_ = 0.0f;     compThresholdMax_ = -40.0f;
+    compThresholdParam_.Init(pod_->knob1, compThresholdMin_, compThresholdMax_, Parameter::LINEAR);   // PAGE_COMP knob1 -- threshold
+    compRatioMin_ = 1.0f;         compRatioMax_ = 8.0f;
+    compRatioParam_.Init(pod_->knob2, compRatioMin_, compRatioMax_, Parameter::LINEAR);         // PAGE_COMP knob2 -- ratio
 
-    pitchMixParam_.Init(pod_->knob1, 0.0f, 1.0f, Parameter::LINEAR);         // PAGE_PITCH knob1 -- wet/dry
-    pitchSemitoneParam_.Init(pod_->knob2, -12.0f, 12.0f, Parameter::LINEAR); // PAGE_PITCH knob2 -- pitch
+    bassGainMin_ = 0.5f;          bassGainMax_ = 1.5f;
+    eqBassParam_.Init(pod_->knob1, bassGainMin_, bassGainMax_, Parameter::LINEAR);            // PAGE_EQ knob1 -- bass
+    trebleGainMin_ = 0.5f;        trebleGainMax_ = 2.5f;
+    eqTrebleParam_.Init(pod_->knob2, trebleGainMin_, trebleGainMax_, Parameter::LINEAR);          // PAGE_EQ knob2 -- treble
 
-    lfoDepthParam_.Init(pod_->knob1, 0.0f, 1.0f, Parameter::LINEAR);         // PAGE_LFO knob1 -- depth
-    lfoDivisionParam_.Init(pod_->knob2, 0.0f, 1.0f, Parameter::LINEAR);      // PAGE_LFO knob2 -- rate/division
+    pitchMixMin_ = 0.0f;          pitchMixMax_ = 1.0f;
+    pitchMixParam_.Init(pod_->knob1, pitchMixMin_, pitchMixMax_, Parameter::LINEAR);         // PAGE_PITCH knob1 -- wet/dry
+    pitchSemitonesMin_ = -12.0f;  pitchSemitonesMax_ = 12.0f;
+    pitchSemitoneParam_.Init(pod_->knob2, pitchSemitonesMin_, pitchSemitonesMax_, Parameter::LINEAR); // PAGE_PITCH knob2 -- pitch
 
-    filterDepthParam_.Init(pod_->knob1, 0.0f, 1.0f, Parameter::LINEAR);      // PAGE_FILTER knob1 -- cutoff depth
-    filterDivisionParam_.Init(pod_->knob2, 0.0f, 1.0f, Parameter::LINEAR);   // PAGE_FILTER knob2 -- sweep speed (tempo division)
+    lfoDepthMin_ = 0.0f;          lfoDepthMax_ = 1.0f;
+    lfoDepthParam_.Init(pod_->knob1, lfoDepthMin_, lfoDepthMax_, Parameter::LINEAR);         // PAGE_LFO knob1 -- depth
+    lfoDivisionMin_ = 0.0f;       lfoDivisionMax_ = 1.0f;
+    lfoDivisionParam_.Init(pod_->knob2, lfoDivisionMin_, lfoDivisionMax_, Parameter::LINEAR);      // PAGE_LFO knob2 -- rate/division
 
-    chorusDepthParam_.Init(pod_->knob1, 0.0f, 1.0f, Parameter::LINEAR);      // PAGE_CHORUS knob1 -- depth
-    chorusRateParam_.Init(pod_->knob2, 0.05f, 5.0f, Parameter::LINEAR);      // PAGE_CHORUS knob2 -- rate (Hz, not tempo-synced)
+    filterDepthMin_ = 0.0f;       filterDepthMax_ = 1.0f;
+    filterDepthParam_.Init(pod_->knob1, filterDepthMin_, filterDepthMax_, Parameter::LINEAR);      // PAGE_FILTER knob1 -- cutoff depth
+    filterDivisionMin_ = 0.0f;    filterDivisionMax_ = 1.0f;
+    filterDivisionParam_.Init(pod_->knob2, filterDivisionMin_, filterDivisionMax_, Parameter::LINEAR);   // PAGE_FILTER knob2 -- sweep speed (tempo division)
 
-    drywetParam_.Init(pod_->knob1, 0.0f, 0.5f, Parameter::LINEAR);           // PAGE_DELAY1 knob1 -- wet/dry
-    feedbackParam_.Init(pod_->knob2, 0.0f, 0.9f, Parameter::CUBE);           // PAGE_DELAY1 knob2 -- feedback
+    chorusDepthMin_ = 0.0f;       chorusDepthMax_ = 1.0f;
+    chorusDepthParam_.Init(pod_->knob1, chorusDepthMin_, chorusDepthMax_, Parameter::LINEAR);      // PAGE_CHORUS knob1 -- depth
+    chorusRateMin_ = 0.05f;       chorusRateMax_ = 16.0f;
+    chorusRateParam_.Init(pod_->knob2, chorusRateMin_, chorusRateMax_, Parameter::LINEAR);      // PAGE_CHORUS knob2 -- rate (Hz, not tempo-synced)
 
-    dampingParam_.Init(pod_->knob1, 0.0f, 1.0f, Parameter::LINEAR);          // PAGE_DELAY2 knob1 -- damping
-    spreadParam_.Init(pod_->knob2, 0.0f, 1.0f, Parameter::LINEAR);           // PAGE_DELAY2 knob2 -- spread -- mono to ping-pong (mystery)
+    drywetMin_ = 0.0f;            drywetMax_ = 0.5f;
+    drywetParam_.Init(pod_->knob1, drywetMin_, drywetMax_, Parameter::LINEAR);           // PAGE_DELAY1 knob1 -- wet/dry
+    feedbackMin_ = 0.0f;          feedbackMax_ = 0.9f;
+    feedbackParam_.Init(pod_->knob2, feedbackMin_, feedbackMax_, Parameter::CUBE);           // PAGE_DELAY1 knob2 -- feedback
 
-    reverbMixParam_.Init(pod_->knob1, 0.0f, 1.0f, Parameter::LINEAR);        // PAGE_REVERB1 knob1 -- wet/dry
-    reverbFeedbackParam_.Init(pod_->knob2, 0.0f, 0.98f, Parameter::LINEAR);  // PAGE_REVERB1 knob2 -- time/size
+    dampingMin_ = 0.0f;           dampingMax_ = 1.0f;
+    dampingParam_.Init(pod_->knob1, dampingMin_, dampingMax_, Parameter::LINEAR);          // PAGE_DELAY2 knob1 -- damping
+    spreadMin_ = 0.0f;            spreadMax_ = 1.0f;
+    spreadParam_.Init(pod_->knob2, spreadMin_, spreadMax_, Parameter::LINEAR);           // PAGE_DELAY2 knob2 -- spread -- mono to ping-pong (mystery)
 
-    reverbDampingParam_.Init(pod_->knob1, 1000.0f, 18000.0f, Parameter::LOGARITHMIC);  // PAGE_REVERB2 knob1 -- damping/tone
-    reverbPreDelayParam_.Init(pod_->knob2, 1.0f, (float)4800, Parameter::LINEAR);      // PAGE_REVERB2 knob2 -- pre-delay (samples, ~100ms max)
+    delayNoteMin_ = 0.0f;         delayNoteMax_ = 1.0f;
+    delayNoteParam_.Init(pod_->knob1, delayNoteMin_, delayNoteMax_, Parameter::LINEAR);      // PAGE_DELAY3 knob1 -- note fraction (whole..thirty-second)
+    delayModifierMin_ = 0.0f;     delayModifierMax_ = 1.0f;
+    delayModifierParam_.Init(pod_->knob2, delayModifierMin_, delayModifierMax_, Parameter::LINEAR);   // PAGE_DELAY3 knob2 -- straight/dotted/triplet
+
+    reverbMixMin_ = 0.0f;         reverbMixMax_ = 1.0f;
+    reverbMixParam_.Init(pod_->knob1, reverbMixMin_, reverbMixMax_, Parameter::LINEAR);        // PAGE_REVERB1 knob1 -- wet/dry
+    reverbFeedbackMin_ = 0.0f;    reverbFeedbackMax_ = 0.98f;
+    reverbFeedbackParam_.Init(pod_->knob2, reverbFeedbackMin_, reverbFeedbackMax_, Parameter::LINEAR);  // PAGE_REVERB1 knob2 -- time/size
+
+    reverbDampingMin_ = 1000.0f;  reverbDampingMax_ = 18000.0f;
+    reverbDampingParam_.Init(pod_->knob1, reverbDampingMin_, reverbDampingMax_, Parameter::LOGARITHMIC);  // PAGE_REVERB2 knob1 -- damping/tone
+    reverbPreDelayMin_ = 1.0f;    reverbPreDelayMax_ = 4800.0f;
+    reverbPreDelayParam_.Init(pod_->knob2, reverbPreDelayMin_, reverbPreDelayMax_, Parameter::LINEAR);      // PAGE_REVERB2 knob2 -- pre-delay (samples, ~100ms max)
 
     delayTarget_ = tempo_->GetNoteSamples(1.0f);
     delayTarget_ = fclamp(delayTarget_, minDelaySamples_, maxDelaySamples_);
@@ -70,6 +100,10 @@ void Controls::UpdateKnobs()
 
     switch(mode_)
     {
+        case PAGE_OVERDRIVE:
+            if(knob1Armed_[mode_]) overdriveDrive_ = overdriveDriveParam_.Process();
+            if(knob2Armed_[mode_]) overdriveLevel_ = overdriveLevelParam_.Process();
+            break;
         case PAGE_COMP:
             if(knob1Armed_[mode_]) compThreshold_ = compThresholdParam_.Process();
             if(knob2Armed_[mode_]) compRatio_     = compRatioParam_.Process();
@@ -113,6 +147,22 @@ void Controls::UpdateKnobs()
         case PAGE_DELAY2:
             if(knob1Armed_[mode_]) dampingAmount_ = dampingParam_.Process();
             if(knob2Armed_[mode_]) spread_        = spreadParam_.Process();
+            break;
+        case PAGE_DELAY3:
+            if(knob1Armed_[mode_])
+            {
+                float raw = delayNoteParam_.Process();
+                int idx = (int)(raw * 4.0f);
+                if(idx > 3) idx = 3;
+                delayNoteIndex_ = idx;
+            }
+            if(knob2Armed_[mode_])
+            {
+                float raw = delayModifierParam_.Process();
+                int idx = (int)(raw * 3.0f);
+                if(idx > 2) idx = 2;
+                delayModifierIndex_ = idx;
+            }
             break;
         case PAGE_REVERB1:
             if(knob1Armed_[mode_]) reverbMix_      = reverbMixParam_.Process();
@@ -164,14 +214,25 @@ void Controls::UpdateDelayRate()
         tempo_->SetBpm(bpm);
     }
 
-    delayTarget_ = tempo_->GetNoteSamples(1.0f);
+    static const float kNoteBase[4] = {
+        1.0f,     // quarter    -- slowest (whole/half dropped -- exceed the 0.75s delay buffer at real tempos)
+        0.5f,     // eighth
+        0.25f,    // sixteenth
+        0.125f    // thirty-second -- fastest
+    };
+
+    float multiplier = kNoteBase[delayNoteIndex_];
+    if(delayModifierIndex_ == 1)      multiplier *= 1.5f;        // dotted
+    else if(delayModifierIndex_ == 2) multiplier *= 2.0f / 3.0f; // triplet
+
+    delayTarget_ = tempo_->GetNoteSamples(multiplier);
     delayTarget_ = fclamp(delayTarget_, minDelaySamples_, maxDelaySamples_);
 }
 
 const char* Controls::GetModeName() const
 {
     static const char* names[kNumEffects] = {
-        "Comp", "Eq", "Pitch", "Lfo1", "Lfo2", "Chorus", "Delay-a", "Delay-b", "Verb-a", "Verb-b"
+        "Drive", "Compressor", "Eq", "Pitch", "Lfo1", "Lfo2", "Chorus", "Delay", "Delay", "Delay", "Reverb", "Reverb"
     };
     return names[mode_];
 }
@@ -186,22 +247,29 @@ void Controls::UpdateLeds()
         return;
     }
 
-    struct Style { float r, g, b; bool isA; };
+    struct Style { float r, g, b; bool isA; bool isBoth; };
     static const Style pageStyles[kNumEffects] = {
-        {0.0f, 0.0f, 1.0f,  true},   // PAGE_COMP     - blue,  a
-        {1.0f, 0.3f, 0.6f,  true},   // PAGE_EQ       - pink,  a
-        {0.0f, 0.7f, 0.6f,  true},   // PAGE_PITCH    - teal,  a
-        {1.0f, 1.0f, 0.0f,  true},   // PAGE_LFO      - yellow, a
-        {1.0f, 0.35f, 0.0f, true},   // PAGE_FILTER   - orange, a
-        {0.8f, 0.5f, 1.0f,  true},   // PAGE_CHORUS   - lilac,  a
-        {0.6f, 0.0f, 1.0f,  true},   // PAGE_DELAY1   - purple, a
-        {0.6f, 0.0f, 1.0f,  false},  // PAGE_DELAY2   - purple, b
-        {0.0f, 1.0f, 0.0f,  true},   // PAGE_REVERB1  - green,  a
-        {0.0f, 1.0f, 0.0f,  false},  // PAGE_REVERB2  - green,  b
+        {1.0f, 0.4f, 0.4f,  true,  false},   // PAGE_OVERDRIVE - light red, a
+        {0.0f, 0.0f, 1.0f,  true,  false},   // PAGE_COMP     - blue,  a
+        {1.0f, 0.3f, 0.6f,  true,  false},   // PAGE_EQ       - pink,  a
+        {0.0f, 0.7f, 0.6f,  true,  false},   // PAGE_PITCH    - teal,  a
+        {1.0f, 1.0f, 0.0f,  true,  false},   // PAGE_LFO      - yellow, a
+        {1.0f, 0.35f, 0.0f, true,  false},   // PAGE_FILTER   - orange, a
+        {0.85f, 0.0f, 0.6f, true,  false},   // PAGE_CHORUS   - violet (magenta-leaning), a
+        {0.4f, 0.0f, 1.0f,  true,  false},   // PAGE_DELAY1   - purple (blue-leaning), a
+        {0.4f, 0.0f, 1.0f,  true,  true},    // PAGE_DELAY3   - purple, both LEDs
+        {0.4f, 0.0f, 1.0f,  false, false},   // PAGE_DELAY2   - purple, b
+        {0.0f, 1.0f, 0.0f,  true,  false},   // PAGE_REVERB1  - green,  a
+        {0.0f, 1.0f, 0.0f,  false, false},   // PAGE_REVERB2  - green,  b
     };
 
     Style s = pageStyles[mode_];
-    if(s.isA)
+    if(s.isBoth)
+    {
+        pod_->led1.Set(s.r, s.g, s.b);
+        pod_->led2.Set(s.r, s.g, s.b);
+    }
+    else if(s.isA)
     {
         pod_->led1.Set(s.r, s.g, s.b);
         pod_->led2.Set(0.0f, 0.0f, 0.0f);
