@@ -71,6 +71,25 @@ void DisplayEngine::Update(Controls &controls, Tempo &tempo)
         return;
     }
 
+    if(controls.IsPresetActive())
+    {
+        char presetStr[12];
+        snprintf(presetStr, sizeof(presetStr), "%d", controls.GetPresetIndex() + 1);
+
+        char bpmStr[12];
+        snprintf(bpmStr, sizeof(bpmStr), "%d BPM", (int)tempo.GetBpm());
+
+        WriteBoldString(0, 0, controls.IsPresetSaveMode() ? "SAVE TO" : "PRESET");
+        int bpmWidth = (int)strlen(bpmStr) * Font_7x10.FontWidth;
+        display_.SetCursor(128 - bpmWidth, 0);
+        display_.WriteString(bpmStr, Font_7x10, true);
+
+        WriteCenteredString(0, 128, 20, presetStr, Font_16x26);
+
+        display_.Update();
+        return;
+    }
+
     char value1[16];
     char label1[16];
     char value2[16];

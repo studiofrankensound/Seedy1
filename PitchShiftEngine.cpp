@@ -26,15 +26,8 @@ void PitchShiftEngine::Init(float sample_rate)
 
 void PitchShiftEngine::Process(float inl, float inr, float &outl, float &outr)
 {
-    // This DaisySP version's PitchShifter reads roughly 2x too extreme
-    // specifically on downward (negative) shifts -- compensate empirically
-    // here rather than patching the vendored library source.
-    float adjustedSemitones = semitones_;
-    if(adjustedSemitones < 0.0f)
-        adjustedSemitones *= 0.5f;
-
-    shifterL_.SetTransposition(adjustedSemitones);
-    shifterR_.SetTransposition(adjustedSemitones);
+    shifterL_.SetTransposition(semitones_);
+    shifterR_.SetTransposition(semitones_);
 
     float shiftedL = shifterL_.Process(inl);
     float shiftedR = shifterR_.Process(inr);

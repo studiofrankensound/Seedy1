@@ -71,6 +71,8 @@ void Controls::Init(DaisyPod *pod, float sample_rate, float maxDelaySamples, Tem
     reverbPreDelayMin_ = 1.0f;    reverbPreDelayMax_ = 4800.0f;
     reverbPreDelayParam_.Init(pod_->knob2, reverbPreDelayMin_, reverbPreDelayMax_, Parameter::LINEAR);      // PAGE_REVERB2 knob2 -- pre-delay (samples, ~100ms max)
 
+    patchEncoder_.Init(seed::D7, seed::D8, seed::D9);   // standalone encoder -- scrolls pages up/down
+
     delayTarget_ = tempo_->GetNoteSamples(1.0f);
     delayTarget_ = fclamp(delayTarget_, minDelaySamples_, maxDelaySamples_);
 }
@@ -79,11 +81,25 @@ void Controls::Process()
 {
     pod_->ProcessAnalogControls();
     pod_->ProcessDigitalControls();
+    patchEncoder_.Debounce();
 
     k1_ = pod_->knob1.Process();
     k2_ = pod_->knob2.Process();
 
+    // First real ADC reading becomes the movement baseline -- Init() runs
+    // before StartAdc(), so knob1EntryRef_/knob2EntryRef_ can't be seeded
+    // with a real position at construction time. Without this, a knob not
+    // sitting near zero at power-on reads as "already moved" on the very
+    // first block and immediately snaps to raw pot position.
+    if(!knobRefsInitialized_)
+    {
+        knobRefsInitialized_ = true;
+        knob1EntryRef_ = k1_;
+        knob2EntryRef_ = k2_;
+    }
+
     UpdateEncoderButton();
+    UpdatePatchEncoder();
     UpdateTapTempo();
     UpdatePage();
     UpdateKnobs();
@@ -113,8 +129,15 @@ void Controls::UpdateKnobs()
             if(knob2Armed_[mode_]) trebleGain_ = eqTrebleParam_.Process();
             break;
         case PAGE_PITCH:
-            if(knob1Armed_[mode_]) pitchMix_       = pitchMixParam_.Process();
-            if(knob2Armed_[mode_]) pitchSemitones_ = pitchSemitoneParam_.Process();
+            if(knob1Armed_[mode_]) pitchMix_ = pitchMixParam_.Process();
+            if(knob2Armed_[mode_])
+            {
+                // Snap to whole semitones -- a continuously-glided pitch
+                // reads as a theremin/pitch-bend, not discrete steps, and
+                // makes it impossible to judge whether +/-12 is a true octave.
+                float raw = pitchSemitoneParam_.Process();
+                pitchSemitones_ = roundf(raw);
+            }
             break;
         case PAGE_LFO:
             if(knob1Armed_[mode_]) lfoDepth_ = lfoDepthParam_.Process();
@@ -183,6 +206,142 @@ void Controls::UpdateEncoderButton()
     }
 }
 
+void Controls::UpdatePatchEncoder()
+{
+    // Short-press: OFF <-> READ (browse/audition presets live, non-destructive
+    // to storage). Long-press: jump straight to SAVE from OFF or READ (does
+    // NOT touch the live sound). Short-press while in SAVE commits and
+    // returns to OFF. Rotation: page scroll (OFF), live recall preview
+    // (READ), or just moves the slot cursor without recalling (SAVE) --
+    // that last part matters, since auto-recalling while choosing a save
+    // slot would clobber the very sound you're trying to save.
+    if(patchEncoder_.Pressed())
+    {
+        if(!patchLongPressFired_ && patchEncoder_.TimeHeldMs() >= kLongPressMs)
+        {
+            patchLongPressFired_ = true;
+            presetUiState_ = PRESET_SAVE;
+        }
+    }
+    else if(patchEncoder_.FallingEdge())
+    {
+        if(!patchLongPressFired_)
+        {
+            switch(presetUiState_)
+            {
+                case PRESET_OFF:
+                    presetUiState_ = PRESET_READ;
+                    ApplyPreset(presetIndex_);
+                    break;
+                case PRESET_READ:
+                    presetUiState_ = PRESET_OFF;
+                    break;
+                case PRESET_SAVE:
+                    SnapshotToPreset(presetIndex_);
+                    pendingSave_ = true;
+                    presetUiState_ = PRESET_OFF;
+                    break;
+            }
+        }
+        patchLongPressFired_ = false;
+    }
+
+    int patchInc = patchEncoder_.Increment();
+    if(patchInc != 0)
+    {
+        if(presetUiState_ == PRESET_OFF)
+        {
+            mode_ = (mode_ + patchInc + kNumEffects) % kNumEffects;
+            knob1Armed_[mode_] = false;
+            knob2Armed_[mode_] = false;
+            knob1EntryRef_ = k1_;
+            knob2EntryRef_ = k2_;
+        }
+        else
+        {
+            presetIndex_ = (presetIndex_ + patchInc + PresetBank::kNumPresets) % PresetBank::kNumPresets;
+            if(presetUiState_ == PRESET_READ)
+                ApplyPreset(presetIndex_);
+        }
+    }
+}
+
+void Controls::ApplyPreset(int idx)
+{
+    const PresetData &p = presetBank_.slots[idx];
+
+    overdriveDrive_        = p.overdriveDrive;
+    overdriveLevel_        = p.overdriveLevel;
+    compThreshold_          = p.compThreshold;
+    compRatio_              = p.compRatio;
+    bassGain_               = p.bassGain;
+    trebleGain_             = p.trebleGain;
+    pitchSemitones_         = p.pitchSemitones;
+    pitchMix_               = p.pitchMix;
+    lfoDepth_               = p.lfoDepth;
+    lfoDivisionIndex_       = p.lfoDivisionIndex;
+    filterDepth_            = p.filterDepth;
+    filterDivisionIndex_    = p.filterDivisionIndex;
+    chorusDepth_            = p.chorusDepth;
+    chorusRate_             = p.chorusRate;
+    feedback_               = p.feedback;
+    drywet_                 = p.drywet;
+    dampingAmount_          = p.dampingAmount;
+    spread_                 = p.spread;
+    delayNoteIndex_         = p.delayNoteIndex;
+    delayModifierIndex_     = p.delayModifierIndex;
+    reverbMix_              = p.reverbMix;
+    reverbFeedback_         = p.reverbFeedback;
+    reverbDamping_          = p.reverbDamping;
+    reverbPreDelaySamples_  = p.reverbPreDelaySamples;
+
+    // Recalled values must stick until the user physically moves a knob --
+    // otherwise the next visit to an already-armed page immediately
+    // overwrites the recalled value with the raw (unrelated) pot position.
+    for(int i = 0; i < kNumEffects; i++)
+    {
+        knob1Armed_[i] = false;
+        knob2Armed_[i] = false;
+    }
+
+    // Also refresh the movement baseline to wherever the knobs physically
+    // sit right now -- otherwise a stale reference from the last page visit
+    // can look like "already moved" on the very next block and re-arm
+    // immediately, clobbering the value we just recalled.
+    knob1EntryRef_ = k1_;
+    knob2EntryRef_ = k2_;
+}
+
+void Controls::SnapshotToPreset(int idx)
+{
+    PresetData &p = presetBank_.slots[idx];
+
+    p.overdriveDrive       = overdriveDrive_;
+    p.overdriveLevel       = overdriveLevel_;
+    p.compThreshold         = compThreshold_;
+    p.compRatio             = compRatio_;
+    p.bassGain              = bassGain_;
+    p.trebleGain            = trebleGain_;
+    p.pitchSemitones        = pitchSemitones_;
+    p.pitchMix              = pitchMix_;
+    p.lfoDepth              = lfoDepth_;
+    p.lfoDivisionIndex      = lfoDivisionIndex_;
+    p.filterDepth           = filterDepth_;
+    p.filterDivisionIndex   = filterDivisionIndex_;
+    p.chorusDepth           = chorusDepth_;
+    p.chorusRate            = chorusRate_;
+    p.feedback              = feedback_;
+    p.drywet                = drywet_;
+    p.dampingAmount         = dampingAmount_;
+    p.spread                = spread_;
+    p.delayNoteIndex        = delayNoteIndex_;
+    p.delayModifierIndex    = delayModifierIndex_;
+    p.reverbMix              = reverbMix_;
+    p.reverbFeedback         = reverbFeedback_;
+    p.reverbDamping          = reverbDamping_;
+    p.reverbPreDelaySamples  = reverbPreDelaySamples_;
+}
+
 void Controls::UpdatePage()
 {
     if(pod_->button2.RisingEdge())
@@ -247,38 +406,43 @@ void Controls::UpdateLeds()
         return;
     }
 
-    struct Style { float r, g, b; bool isA; bool isBoth; };
+    if(presetUiState_ == PRESET_SAVE)
+    {
+        // Amber, not white -- this state overwrites a slot, worth a
+        // visibly different color from plain browsing.
+        pod_->led1.Set(1.0f, 0.6f, 0.0f);
+        pod_->led2.Set(1.0f, 0.6f, 0.0f);
+        pod_->UpdateLeds();
+        return;
+    }
+
+    if(presetUiState_ == PRESET_READ)
+    {
+        pod_->led1.Set(1.0f, 1.0f, 1.0f);
+        pod_->led2.Set(1.0f, 1.0f, 1.0f);
+        pod_->UpdateLeds();
+        return;
+    }
+
+    struct Style { float r, g, b; };
     static const Style pageStyles[kNumEffects] = {
-        {1.0f, 0.4f, 0.4f,  true,  false},   // PAGE_OVERDRIVE - light red, a
-        {0.0f, 0.0f, 1.0f,  true,  false},   // PAGE_COMP     - blue,  a
-        {1.0f, 0.3f, 0.6f,  true,  false},   // PAGE_EQ       - pink,  a
-        {0.0f, 0.7f, 0.6f,  true,  false},   // PAGE_PITCH    - teal,  a
-        {1.0f, 1.0f, 0.0f,  true,  false},   // PAGE_LFO      - yellow, a
-        {1.0f, 0.35f, 0.0f, true,  false},   // PAGE_FILTER   - orange, a
-        {0.85f, 0.0f, 0.6f, true,  false},   // PAGE_CHORUS   - violet (magenta-leaning), a
-        {0.4f, 0.0f, 1.0f,  true,  false},   // PAGE_DELAY1   - purple (blue-leaning), a
-        {0.4f, 0.0f, 1.0f,  true,  true},    // PAGE_DELAY3   - purple, both LEDs
-        {0.4f, 0.0f, 1.0f,  false, false},   // PAGE_DELAY2   - purple, b
-        {0.0f, 1.0f, 0.0f,  true,  false},   // PAGE_REVERB1  - green,  a
-        {0.0f, 1.0f, 0.0f,  false, false},   // PAGE_REVERB2  - green,  b
+        {1.0f, 0.4f, 0.4f },   // PAGE_OVERDRIVE - light red
+        {0.0f, 0.0f, 1.0f },   // PAGE_COMP      - blue
+        {1.0f, 0.3f, 0.6f },   // PAGE_EQ        - pink
+        {0.0f, 0.7f, 0.6f },   // PAGE_PITCH     - teal
+        {1.0f, 1.0f, 0.0f },   // PAGE_LFO       - yellow
+        {1.0f, 0.35f, 0.0f},   // PAGE_FILTER    - orange
+        {0.85f, 0.0f, 0.6f},   // PAGE_CHORUS    - violet (magenta-leaning)
+        {0.4f, 0.0f, 1.0f },   // PAGE_DELAY1    - purple (blue-leaning)
+        {0.4f, 0.0f, 1.0f },   // PAGE_DELAY3    - purple
+        {0.4f, 0.0f, 1.0f },   // PAGE_DELAY2    - purple
+        {0.0f, 1.0f, 0.0f },   // PAGE_REVERB1   - green
+        {0.0f, 1.0f, 0.0f },   // PAGE_REVERB2   - green
     };
 
     Style s = pageStyles[mode_];
-    if(s.isBoth)
-    {
-        pod_->led1.Set(s.r, s.g, s.b);
-        pod_->led2.Set(s.r, s.g, s.b);
-    }
-    else if(s.isA)
-    {
-        pod_->led1.Set(s.r, s.g, s.b);
-        pod_->led2.Set(0.0f, 0.0f, 0.0f);
-    }
-    else
-    {
-        pod_->led1.Set(0.0f, 0.0f, 0.0f);
-        pod_->led2.Set(s.r, s.g, s.b);
-    }
+    pod_->led1.Set(s.r, s.g, s.b);
+    pod_->led2.Set(s.r, s.g, s.b);
 
     pod_->UpdateLeds();
 }

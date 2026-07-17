@@ -8,7 +8,7 @@ void FilterEngine::Init(float sample_rate, Tempo *tempo)
     depth_ = 0.0f;
     divisionIndex_ = 2;   // quarter note by default
 
-    divisions_[0] = 4.0f;      // whole note      -- slowest
+    divisions_[0] = 16.0f;     // whole note      -- slowest (quadrupled)
     divisions_[1] = 2.0f;      // half note
     divisions_[2] = 1.0f;      // quarter note
     divisions_[3] = 0.75f;     // dotted eighth

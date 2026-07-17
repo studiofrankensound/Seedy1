@@ -1,6 +1,7 @@
 #pragma once
 #include "daisy_pod.h"
 #include "Tempo.h"
+#include "Preset.h"
 
 class Controls
 {
@@ -39,6 +40,22 @@ class Controls
     const char* GetModeName() const;
     bool  GetBypassed()      const { return bypassed_; }
 
+    bool IsPresetActive()   const { return presetUiState_ != PRESET_OFF; }
+    bool IsPresetSaveMode() const { return presetUiState_ == PRESET_SAVE; }
+    int  GetPresetIndex()   const { return presetIndex_; }
+
+    // Preset persistence lives outside Controls (it needs the QSPI handle,
+    // and the actual flash write must happen off the audio thread) -- these
+    // are the only two touchpoints main() needs.
+    void LoadPresetBank(const PresetBank &bank) { presetBank_ = bank; }
+    const PresetBank &GetPresetBank() const { return presetBank_; }
+    bool ConsumePendingSave()
+    {
+        if(!pendingSave_) return false;
+        pendingSave_ = false;
+        return true;
+    }
+
     // Real configured range for each parameter -- the single source of truth,
     // set from the exact same values passed into each Parameter::Init() call.
     Range GetOverdriveDriveRange()  const { return { overdriveDriveMin_, overdriveDriveMax_ }; }
@@ -76,17 +93,38 @@ class Controls
     };
     static const int kNumEffects = 12;
 
+    // OFF: normal editing, patchEncoder_ scrolls pages.
+    // READ: short-press from OFF; scrolling previews/recalls presets live
+    //   (non-destructive to storage, but does overwrite the live sound).
+    // SAVE: long-press from OFF or READ; scrolling only moves the slot
+    //   cursor (does NOT touch the live sound), short-press commits the
+    //   current live sound into that slot and returns to OFF.
+    enum PresetUiState { PRESET_OFF, PRESET_READ, PRESET_SAVE };
+
     void UpdateKnobs();
     void UpdateEncoderButton();
+    void UpdatePatchEncoder();
     void UpdatePage();
     void UpdateTapTempo();
     void UpdateDelayRate();
     void UpdateLeds();
 
+    void ApplyPreset(int idx);
+    void SnapshotToPreset(int idx);
+
     daisy::DaisyPod *pod_ = nullptr;
     Tempo           *tempo_ = nullptr;
 
+    daisy::Encoder patchEncoder_;   // standalone encoder on D7/D8/D9 -- bidirectional page scroll
+
     int mode_ = PAGE_OVERDRIVE;
+
+    PresetBank presetBank_;
+    PresetUiState presetUiState_ = PRESET_OFF;
+    int  presetIndex_ = 0;
+    bool patchLongPressFired_ = false;
+    bool pendingSave_ = false;
+    static constexpr float kLongPressMs = 600.0f;
 
     daisy::Parameter overdriveDriveParam_, overdriveLevelParam_;
     daisy::Parameter compThresholdParam_, compRatioParam_;
@@ -159,6 +197,7 @@ class Controls
     float movementThreshold_ = 0.015f;   // filters ADC jitter, reacts to real movement
     float minDelaySamples_ = 0.0f, maxDelaySamples_ = 0.0f;
 
+    bool  knobRefsInitialized_ = false;
     float knob1EntryRef_ = 0.0f, knob2EntryRef_ = 0.0f;
     bool  knob1Armed_[kNumEffects]   = { false, false, false, false, false, false, false, false, false, false, false, false };
     bool  knob2Armed_[kNumEffects]   = { false, false, false, false, false, false, false, false, false, false, false, false };

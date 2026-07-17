@@ -12,6 +12,8 @@
 #include "SimpleChorusEngine.h"
 #include "OverdriveEngine.h"
 #include "DisplayEngine.h"
+#include "Preset.h"
+#include "util/PersistentStorage.h"
 
 using namespace daisysp;
 using namespace daisy;
@@ -29,6 +31,7 @@ static FilterEngine filterEngine;
 static SimpleChorusEngine chorusEngine;
 static ReverbEngine DSY_SDRAM_BSS reverbEngine;
 static DisplayEngine displayEngine;
+static PersistentStorage<PresetBank> presetStorage(pod.seed.qspi);   // pod must already be declared above
 
 void AudioCallback(AudioHandle::InterleavingInputBuffer  in,
                     AudioHandle::InterleavingOutputBuffer out,
@@ -135,11 +138,23 @@ int main(void)
     displayEngine.Init();
     controls.Init(&pod, sample_rate, (float)DelayEngine::kMaxDelaySamples, &tempo);
 
+    presetStorage.Init(PresetBank());
+    controls.LoadPresetBank(presetStorage.GetSettings());
+
     pod.StartAdc();
     pod.StartAudio(AudioCallback);
 
     while(1)
     {
+        // Preset saves are flagged by the audio thread but must be flushed
+        // to flash here -- QSPI erase/write blocks for too long to run
+        // inside the audio callback.
+        if(controls.ConsumePendingSave())
+        {
+            presetStorage.GetSettings() = controls.GetPresetBank();
+            presetStorage.Save();
+        }
+
         displayEngine.Update(controls, tempo);
         System::Delay(100);
     }

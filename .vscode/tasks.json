@@ -84,8 +84,8 @@
       "command": "make",
       "label": "build_libdaisy",
       "options": {
-        //"cwd": "D:/OneDrive/Frankencloud/Installable/AudioInterfaces/DaisySeed/DaisyExamples/libDaisy/"
-        "cwd": "C:/libDaisy/"
+        "cwd": "D:/OneDrive/Frankencloud/Projects_Code/CppLibs/DaisyExamples/libDaisy/"
+        //"cwd": "C:/libDaisy/"
       },
       "problemMatcher": [
         "$gcc"
@@ -96,8 +96,8 @@
       "command": "make",
       "label": "build_daisysp",
       "options": {
-        //"cwd": "D:/OneDrive/Frankencloud/Installable/AudioInterfaces/DaisySeed/DaisyExamples/DaisySP/"
-        "cwd": "C:/DaisySP/"
+        "cwd": "D:/OneDrive/Frankencloud/Projects_Code/CppLibs/DaisyExamples/DaisySP/"
+        //"cwd": "C:/DaisySP/"
       },
       "problemMatcher": [
         "$gcc"
